@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blip can…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2340;--accent:#ff6b5b;--body1:#6ee6c1;--body2:#25a984;--lid:#3cc29c;--range:150px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Fredoka,system-ui,sans-serif;color:var(--ink);background:radial-gradient(circle at 15% 0%,#fff3d6,#ffd9c9 55%,#f6c3d8);min-height:100vh}
+.wrap{max-width:880px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:clamp(30px,6vw,46px);margin:0;font-weight:700;letter-spacing:.3px}
+h1 span{color:var(--accent)}
+.sub{margin:2px 0 0;font-size:16px;opacity:.7}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:inherit;font-size:15px;font-weight:500;border:0;border-radius:999px;padding:9px 16px;cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 3px 0 rgba(43,35,64,.15);transition:transform .08s,box-shadow .08s}
+button:active{transform:translateY(3px);box-shadow:none}
+
+/* stage */
+.stage{position:relative;height:430px;border-radius:28px;overflow:hidden;background:linear-gradient(#a9e0ff,#e6f6ff 72%);box-shadow:0 12px 30px rgba(43,35,64,.18),inset 0 0 0 4px rgba(255,255,255,.55);user-select:none}
+.sun{position:absolute;top:26px;right:34px;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle,#fff6a8,#ffd447);box-shadow:0 0 40px #ffe27a}
+.ground{position:absolute;left:0;right:0;bottom:0;height:72px;background:linear-gradient(#9be27f,#62bb52)}
+.ground::before{content:"";position:absolute;left:0;right:0;top:-10px;height:20px;background:radial-gradient(circle at 12px 12px,#9be27f 11px,transparent 12px) 0 0/24px 20px repeat-x}
+.cloud{position:absolute;background:#fff;border-radius:999px;opacity:.92}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.c1{width:110px;height:34px;top:56px;left:-130px;animation:cloud 40s linear -8s infinite}
+.c1::before{width:52px;height:52px;left:18px;top:-26px}.c1::after{width:40px;height:40px;left:56px;top:-17px}
+.c2{width:80px;height:26px;top:120px;left:-100px;animation:cloud 56s linear -30s infinite}
+.c2::before{width:38px;height:38px;left:12px;top:-19px}.c2::after{width:30px;height:30px;left:40px;top:-13px}
+@keyframes cloud{to{transform:translateX(1150px)}}
+
+#mover{position:absolute;left:50%;bottom:54px;width:220px;height:220px;margin-left:-110px;transform-origin:50% 100%;perspective:700px;z-index:2}
+#shadow{position:absolute;left:35px;right:35px;bottom:-8px;height:20px;border-radius:50%;background:rgba(0,0,0,.14)}
+#roller{position:relative;width:100%;height:100%;transform-origin:50% 55%;transition:transform .35s}
+#blip{width:100%;height:100%;overflow:visible;display:block}
+#blip *{transform-box:fill-box}
+#bodyg{transform-origin:50% 100%;animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.025,.975)}}
+#ant{transform-origin:50% 100%;animation:sway 2.6s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+#armL{transform-origin:100% 15%;transition:transform .3s}
+#armR{transform-origin:0% 15%;transition:transform .3s}
+#footL,#footR{transform-origin:50% 50%}
+.lid{transform:scaleY(0);transform-origin:50% 0;transition:transform .09s}
+#pupils{transition:transform .25s}
+.cheek{opacity:.35;transition:opacity .4s,fill .4s}
+#wings{display:none}
+#mouths{transform-origin:50% 50%}
+.m{display:none}
+.stage[data-face=happy] .m-happy,.stage[data-face=open] .m-open,.stage[data-face=sad] .m-sad,
+.stage[data-face=o] .m-o,.stage[data-face=closed] .m-o,.stage[data-face=yawn] .m-yawn{display:inline}
+.stage[data-face=closed] .lid,.stage.blinking .lid{transform:scaleY(1)}
+
+/* ---------- actions ---------- */
+[data-act=jump] #mover{animation:jump .9s ease-in-out}
+@keyframes jump{0%{transform:none}15%{transform:scale(1.18,.8)}50%{transform:translateY(-150px) scale(.92,1.1)}85%{transform:scale(1.15,.85)}100%{transform:none}}
+
+[data-act=spin] #roller{animation:spinY 1s ease-in-out}
+@keyframes spinY{to{transform:rotateY(720deg)}}
+
+[data-act=grow] #mover{animation:grow 1.8s ease-in-out}
+@keyframes grow{40%,65%{transform:scale(1.55)}}
+[data-act=shrink] #mover{animation:shrink 1.8s ease-in-out}
+@keyframes shrink{40%,65%{transform:scale(.3)}}
+
+[data-act=sleep] #mover{animation:sleepB 1.5s ease-in-out 2}
+@keyframes sleepB{50%{transform:scale(1.05,.95)}}
+[data-act=sleep] #roller{transform:rotate(8deg)}
+
+[data-act=cry] #mover{animation:sob .5s ease-in-out 5}
+@keyframes sob{50%{transform:translateY(4px) scale(1.03,.95)}}
+[data-act=cry] #pupils{transform:translateY(4px)}
+
+[data-act=laugh] #roller{animation:laugh .25s ease-in-out 8}
+@keyframes laugh{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-6px)}}
+
+[data-act=dance] #mover{animation:dance 1.2s ease-in-out 2}
+@keyframes dance{0%,100%{transform:none}25%{transform:translateX(-50px) rotate(-12deg)}50%{transform:translateY(-30px)}75%{transform:translateX(50px) rotate(12deg)}}
+[data-act=dance] #armL,[data-act=cheer] #armL{animation:armUpL .3s ease-in-out alternate 8}
+[data-act=dance] #armR,[data-act=cheer] #armR{animation:armUpR .3s ease-in-out alternate 8}
+@keyframes armUpL{to{transform:rotate(110deg)}}
+@keyframes armUpR{to{transform:rotate(-110deg)}}
+
+[data-act=shiver] #mover,[data-act=scream] #mover{animation:shiv .07s linear 22}
+@keyframes shiv{0%,100%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
+[data-act=sweat] #mover{animation:shiv2 .1s linear 22}
+@keyframes shiv2{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
+
+[data-act=explode] #roller{animation:explode 2.2s ease}
+@keyframes explode{0%{transform:none;opacity:1}10%{transform:scale(1.05) rotate(-3deg)}16%{transform:scale(1.12) rotate(3deg)}22%{transform:scale(1.22) rotate(-3deg)}27%{transform:scale(1.32);opacity:1}28%{transform:scale(0);opacity:0}75%{transform:scale(0);opacity:0}88%{transform:scale(1.15);opacity:1}100%{transform:none;opacity:1}}
+
+[data-act=fly] #wings{display:inline}
+[data-act=fly] #mover{animation:fly 3.2s ease-in-out}
+@keyframes fly{0%{transform:none}25%{transform:translateY(-140px)}42%{transform:translate(-60px,-170px)}60%{transform:translate(60px,-130px)}78%{transform:translateY(-140px)}100%{transform:none}}
+#wingL{transform-origin:100% 100%;animation:flapL .14s ease-in-out alternate infinite}
+#wingR{transform-origin:0% 100%;animation:flapR .14s ease-in-out alternate infinite}
+@keyframes flapL{to{transform:rotate(-32deg)}}
+@keyframes flapR{to{transform:rotate(32deg)}}
+
+[data-act=fall] #mover{animation:fall 2.4s ease-in}
+@keyframes fall{0%{transform:none}15%{transform:rotate(-12deg)}35%{transform:translateY(-110px) rotate(98deg)}40%{transform:translateY(-110px) rotate(86deg)}45%,78%{transform:translateY(-110px) rotate(90deg)}100%{transform:none}}
+
+[data-act=blink] .lid{animation:blinkA .45s 2}
+@keyframes blinkA{50%{transform:scaleY(1)}}
+
+[data-act=smile] #mover{animation:hop .5s ease 3}
+@keyframes hop{50%{transform:translateY(-20px)}}
+[data-act=smile] .cheek,[data-act=love] .cheek{opacity:.85}
+
+[data-act=sulk] #mover{animation:sulk 2.2s ease}
+@keyframes sulk{20%,80%{transform:scale(1.05,.88)}}
+[data-act=sulk] #roller{transform:rotate(-6deg)}
+[data-act=sulk] #pupils{transform:translateY(5px)}
+
+[data-act=melt] #mover{animation:melt 3s ease-in-out}
+@keyframes melt{0%{transform:none}35%,70%{transform:scale(1.8,.12)}100%{transform:none}}
+
+[data-act=vanish] #roller{animation:vanish 2.6s ease}
+@keyframes vanish{0%{transform:none;opacity:1}20%{transform:scale(.05,1.4);opacity:0}75%{transform:scale(.05,1.4);opacity:0}90%{transform:scale(1.1);opacity:1}100%{transform:none;opacity:1}}
+
+[data-act=walk] #mover{animation:walk 3s ease-in-out}
+[data-act=run] #mover{animation:walk 1.8s ease-in-out}
+@keyframes walk{0%,100%{transform:none}25%{transform:translateX(calc(var(--range) * -1))}75%{transform:translateX(var(--range))}}
+[data-act=walk] #roller{animation:bob .375s ease-in-out 8}
+[data-act=run] #roller{animation:bob .2s ease-in-out 9}
+@keyframes bob{50%{transform:translateY(-8px) rotate(3deg)}}
+[data-act=walk] #footL{animation:step .375s 8}
+[data-act=walk] #footR{animation:step .375s .19s 8}
+[data-act=run] #footL{animation:step .2s 9}
+[data-act=run] #footR{animation:step .2s .1s 9}
+@keyframes step{50%{transform:translateY(-9px)}}
+
+[data-act=sing] #mover,[data-act=love] #mover{animation:sway2 1.3s ease-in-out 2}
+@keyframes sway2{25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+
+[data-act=squash] #mover{animation:squash 1.6s ease-in-out}
+@keyframes squash{0%{transform:none}20%,50%{transform:scale(1.5,.4)}65%{transform:scale(.85,1.2)}80%{transform:scale(1.08,.94)}100%{transform:none}}
+
+[data-act=stretch] #mover{animation:stretch 1.9s ease-in-out}
+@keyframes stretch{0%{transform:none}35%,70%{transform:scale(.72,1.55)}85%{transform:scale(1.1,.9)}100%{transform:none}}
+[data-act=stretch] #armL,[data-act=yawn] #armL{transform:rotate(140deg)}
+[data-act=stretch] #armR,[data-act=yawn] #armR{transform:rotate(-140deg)}
+
+[data-act=blush] .cheek{opacity:1;fill:#ff4f74}
+[data-act=blush] #roller{animation:shy 2.2s ease-in-out}
+@keyframes shy{20%,80%{transform:rotate(-8deg) scale(.95)}}
+[data-act=blush] #pupils{transform:translate(-5px,5px)}
+
+[data-act=sneeze] #roller{animation:sneeze 1.6s ease-in-out}
+@keyframes sneeze{0%{transform:none}45%{transform:rotate(-12deg) scale(1,1.06)}55%{transform:rotate(14deg) translateX(14px) scale(1.05,.95)}70%{transform:rotate(-3deg)}100%{transform:none}}
+
+[data-act=hiccup] #mover{animation:hic 2s ease-out}
+@keyframes hic{0%,12%,22%,45%,55%,78%,88%,100%{transform:none}17%,50%,83%{transform:translateY(-24px) scale(.95,1.05)}}
+
+[data-act=glow] #blip{animation:glow 2.4s ease-in-out}
+@keyframes glow{30%,70%{filter:drop-shadow(0 0 16px #fff59a) drop-shadow(0 0 36px #ffe066) brightness(1.25)}}
+
+[data-act=freeze] #blip{animation:freeze 2.8s ease}
+@keyframes freeze{15%,82%{filter:hue-rotate(28deg) saturate(.3) brightness(1.4)}}
+[data-act=freeze] #mover{animation:shiv .07s linear 1.9s 10}
+[data-act=freeze] #bodyg,[data-act=freeze] #ant{animation-play-state:paused}
+
+[data-act=wave] #armR{animation:wave 1.8s ease-in-out}
+@keyframes wave{0%,100%{transform:none}20%{transform:rotate(-130deg)}35%{transform:rotate(-100deg)}50%{transform:rotate(-140deg)}65%{transform:rotate(-100deg)}80%{transform:rotate(-130deg)}}
+[data-act=wave] #roller{transform:rotate(-4deg)}
+
+[data-act=think] #roller{transform:rotate(10deg)}
+[data-act=think] #pupils{transform:translate(4px,-6px)}
+
+[data-act=roll] #mover{animation:rollX 2.4s ease-in-out}
+@keyframes rollX{0%,100%{transform:none}35%{transform:translateX(calc(var(--range) * -1))}70%{transform:translateX(var(--range))}}
+[data-act=roll] #roller{animation:rollR 2.4s ease-in-out}
+@keyframes rollR{0%,100%{transform:none}35%{transform:rotate(-400deg)}70%{transform:rotate(400deg)}}
+
+[data-act=flip] #mover{animation:flipJ 1.2s ease-in-out}
+@keyframes flipJ{0%,100%{transform:none}15%{transform:scale(1.15,.82)}50%{transform:translateY(-170px)}85%{transform:scale(1.12,.88)}}
+[data-act=flip] #roller{animation:flipR 1.2s ease-in-out}
+@keyframes flipR{0%,20%{transform:none}78%,100%{transform:rotate(-360deg)}}
+
+[data-act=burp] #roller{animation:burp 1.4s ease}
+@keyframes burp{0%,100%{transform:none}30%{transform:scale(1.08,.95)}40%{transform:scale(.96,1.05) translateY(-6px)}}
+
+[data-act=eat] #mouths,[data-act=talk] #mouths{animation:chomp .22s ease-in-out alternate 10}
+@keyframes chomp{to{transform:scaleY(.2)}}
+
+[data-act=yawn] #mover{animation:yawnS 2.2s ease-in-out}
+@keyframes yawnS{30%,70%{transform:scale(.95,1.08)}}
+[data-act=yawn] .lid{transform:scaleY(.55)}
+
+[data-act=change] #blip{animation:hue 3s linear}
+@keyframes hue{to{filter:hue-rotate(720deg)}}
+
+[data-act=tiptoe] #mover{animation:tiptoe 3.2s ease-in-out}
+@keyframes tiptoe{0%,100%{transform:none}12%{transform:translate(calc(var(--range) * -.25),-14px)}24%{transform:translate(calc(var(--range) * -.5),0)}36%{transform:translate(calc(var(--range) * -.75),-14px)}48%{transform:translate(calc(var(--range) * -1),0)}62%{transform:translate(calc(var(--range) * -.66),-14px)}76%{transform:translate(calc(var(--range) * -.33),0)}88%{transform:translate(0,-14px)}}
+[data-act=tiptoe] #pupils{transform:translateX(-7px)}
+[data-act=tiptoe] #roller{transform:scale(1,.92)}
+
+[data-act=swim] #mover{animation:swim 1.5s ease-in-out 2}
+@keyframes swim{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-22px) rotate(8deg)}}
+[data-act=swim] #armL{animation:armUpL .35s ease-in-out alternate 8}
+[data-act=swim] #armR{animation:armUpR .35s ease-in-out .35s alternate 8}
+
+[data-act=nod] #roller{animation:nod .5s ease-in-out 3}
+@keyframes nod{50%{transform:translateY(9px) scale(1,.95)}}
+
+[data-act=crouch] #mover{animation:crouch 1.5s ease-in-out}
+@keyframes crouch{25%,75%{transform:scale(1.12,.62)}}
+
+[data-act=cheer] #mover{animation:hop .45s ease 4}
+
+[data-act=cough] #roller{animation:cough 1.8s ease}
+@keyframes cough{0%,20%,45%,70%,100%{transform:none}10%,35%,60%{transform:rotate(8deg) scale(1.04,.96)}}
+
+[data-act=look] #pupils{animation:look 2.4s ease-in-out}
+@keyframes look{0%,100%{transform:none}20%,40%{transform:translateX(-7px)}60%,80%{transform:translateX(7px)}}
+[data-act=look] #roller{animation:lookR 2.4s ease-in-out}
+@keyframes lookR{0%,100%{transform:none}20%,40%{transform:rotate(-6deg)}60%,80%{transform:rotate(6deg)}}
+
+[data-act=clone] #roller{animation:pulse .6s ease}
+@keyframes pulse{50%{transform:scale(1.1)}}
+
+[data-act=huh] #roller{animation:huh 1.6s ease-in-out}
+@keyframes huh{0%,100%{transform:none}20%,40%{transform:rotate(-12deg)}60%,80%{transform:rotate(12deg)}}
+[data-act=huh] #armL{transform:rotate(70deg)}
+[data-act=huh] #armR{transform:rotate(-70deg)}
+
+/* ---------- effects ---------- */
+.fx{position:absolute;pointer-events:none;opacity:0;animation-name:drift;animation-fill-mode:both;animation-timing-function:ease-out;font-weight:700;white-space:nowrap;z-index:5;line-height:1}
+@keyframes drift{0%{transform:translate(-50%,-50%) scale(var(--s0,1)) rotate(0);opacity:0}10%{opacity:1}80%{opacity:1}100%{transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px))) scale(var(--s1,1)) rotate(var(--rot,0deg));opacity:0}}
+.fx.pop{animation-name:popin}
+@keyframes popin{0%{transform:translate(-50%,-50%) scale(0);opacity:0}10%{transform:translate(-50%,-50%) scale(1.15);opacity:1}16%{transform:translate(-50%,-50%) scale(1)}85%{opacity:1}100%{transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px))) scale(1);opacity:0}}
+.drop{width:10px;height:14px;background:#55b6ff;border-radius:50% 50% 50% 50%/60% 60% 40% 40%}
+.bit{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--body1),var(--body2))}
+.conf{width:9px;height:15px;border-radius:2px}
+.bubble{background:#fff;color:var(--ink);border-radius:18px;padding:9px 15px;box-shadow:0 3px 0 rgba(0,0,0,.1);font-weight:600}
+.bubble::after{content:"";position:absolute;left:18px;bottom:-9px;border:10px solid transparent;border-top-color:#fff;border-bottom:0}
+.thought::after{content:"";position:absolute;left:8px;bottom:-22px;width:12px;height:12px;border-radius:50%;background:#fff;border:0;box-shadow:-8px 10px 0 -3px #fff}
+.big{font-size:44px;color:#ff5a3c;-webkit-text-stroke:2px #fff;text-shadow:0 4px 0 rgba(0,0,0,.15)}
+.apple{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff9a8a,#e0282a)}
+.apple::after{content:"";position:absolute;width:10px;height:6px;background:#3fae3a;border-radius:0 8px 0 8px;left:14px;top:-4px}
+.water{position:absolute;left:0;right:0;bottom:0;height:0;z-index:4;pointer-events:none;background:linear-gradient(rgba(90,180,255,.5),rgba(30,110,220,.72));animation:water 3s ease-in-out forwards}
+.water::before{content:"";position:absolute;left:0;right:0;top:-10px;height:12px;background:radial-gradient(circle at 15px 14px,rgba(90,180,255,.5) 13px,transparent 14px) 0 0/30px 12px repeat-x;animation:wave 1s linear infinite}
+@keyframes water{15%,82%{height:210px}100%{height:0}}
+@keyframes wave{to{background-position:30px 0}}
+.clone{position:absolute;pointer-events:none;z-index:1;animation:cloneA 2.4s ease-in-out forwards}
+@keyframes cloneA{0%{transform:none;opacity:.9}30%,70%{transform:translateX(var(--dx));opacity:.85}100%{transform:none;opacity:0}}
+
+/* ---------- controls ---------- */
+form{display:flex;align-items:center;gap:10px;margin:18px 0 8px;background:#fff;border-radius:22px;padding:10px 10px 10px 20px;box-shadow:0 6px 0 rgba(43,35,64,.12)}
+form label{font-size:clamp(22px,4.5vw,32px);font-weight:600;white-space:nowrap}
+form input{flex:1;min-width:0;font-family:inherit;font-size:clamp(22px,4.5vw,32px);font-weight:500;border:0;outline:0;background:#fff7ef;border-radius:14px;padding:8px 14px;color:var(--accent);caret-color:var(--accent)}
+form input::placeholder{color:#e9c9bd}
+form button{font-size:clamp(18px,3.5vw,24px);font-weight:600;background:var(--accent);color:#fff;padding:12px 22px;box-shadow:0 4px 0 #c94436}
+#msg{min-height:28px;font-size:19px;padding:2px 6px;text-align:center}
+#msg.new{color:#1d8f6d;font-weight:600}
+#msg.no{color:#a0523f}
+.panel{margin-top:14px;background:rgba(255,255,255,.65);border-radius:22px;padding:16px 18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.count{font-size:18px;font-weight:600}
+.bar{height:14px;border-radius:999px;background:#fff;margin:10px 0 14px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb347,#ff6b5b);border-radius:999px;transition:width .5s}
+#chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:15px;padding:5px 12px;background:#fff;box-shadow:0 2px 0 rgba(43,35,64,.12)}
+.chip.fresh{background:#fff1a8;animation:fresh .6s ease}
+@keyframes fresh{0%{transform:scale(.3)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.empty{opacity:.6;font-size:16px}
+.small{font-size:14px;padding:7px 13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Blip <span>can…</span></h1>
+      <p class="sub">Type a doing word and see if Blip knows how.</p>
+    </div>
+    <div class="tools">
+      <button id="hintBtn" type="button">💡 Hint</button>
+      <button id="soundBtn" type="button">🔊 Sound on</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage" data-face="happy">
+    <div class="sun"></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div>
+    <div class="ground"></div>
+    <div id="mover">
+      <div id="shadow"></div>
+      <div id="roller">
+        <svg id="blip" viewBox="0 0 200 200" aria-label="Blip, a round green creature">
+          <defs>
+            <radialGradient id="bodyGrad" cx="38%" cy="32%" r="75%">
+              <stop offset="0" stop-color="#8ff3d4"/>
+              <stop offset=".55" stop-color="#4fd3ab"/>
+              <stop offset="1" stop-color="#25a984"/>
+            </radialGradient>
+            <clipPath id="eyeClip">
+              <ellipse cx="78" cy="96" rx="14" ry="16"/>
+              <ellipse cx="122" cy="96" rx="14" ry="16"/>
+            </clipPath>
+          </defs>
+          <g id="wings">
+            <g id="wingL"><ellipse cx="40" cy="78" rx="32" ry="15" transform="rotate(-25 40 78)" fill="#fff" fill-opacity=".85" stroke="#9fd6ff" stroke-width="3"/></g>
+            <g id="wingR"><ellipse cx="160" cy="78" rx="32" ry="15" transform="rotate(25 160 78)" fill="#fff" fill-opacity=".85" stroke="#9fd6ff" stroke-width="3"/></g>
+          </g>
+          <g id="bodyg">
+            <g id="ant">
+              <path d="M100 48 Q98 30 108 16" stroke="#25a984" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <circle cx="108" cy="14" r="8.5" fill="#ff7a5c"/>
+              <circle cx="105" cy="11" r="2.6" fill="#fff" opacity=".8"/>
+            </g>
+            <g id="armL"><ellipse cx="29" cy="126" rx="12" ry="20" transform="rotate(22 29 126)" fill="#3cc29c"/></g>
+            <g id="armR"><ellipse cx="171" cy="126" rx="12" ry="20" transform="rotate(-22 171 126)" fill="#3cc29c"/></g>
+            <g id="footL"><ellipse cx="74" cy="183" rx="20" ry="10" fill="#25a984"/></g>
+            <g id="footR"><ellipse cx="126" cy="183" rx="20" ry="10" fill="#25a984"/></g>
+            <path d="M100 42 C152 42 176 80 176 120 C176 162 146 182 100 182 C54 182 24 162 24 120 C24 80 48 42 100 42 Z" fill="url(#bodyGrad)"/>
+            <ellipse class="cheek" cx="58" cy="124" rx="12" ry="7" fill="#ff8fa3"/>
+            <ellipse class="cheek" cx="142" cy="124" rx="12" ry="7" fill="#ff8fa3"/>
+            <ellipse cx="78" cy="96" rx="14" ry="16" fill="#fff"/>
+            <ellipse cx="122" cy="96" rx="14" ry="16" fill="#fff"/>
+            <g id="pupils">
+              <circle cx="80" cy="98" r="7.5" fill="#2b2340"/>
+              <circle cx="124" cy="98" r="7.5" fill="#2b2340"/>
+              <circle cx="83" cy="95" r="2.6" fill="#fff"/>
+              <circle cx="127" cy="95" r="2.6" fill="#fff"/>
+            </g>
+            <g clip-path="url(#eyeClip)">
+              <rect class="lid" x="62" y="78" width="32" height="36" fill="#3cc29c"/>
+              <rect class="lid" x="106" y="78" width="32" height="36" fill="#3cc29c"/>
+            </g>
+            <g id="mouths">
+              <path class="m m-happy" d="M84 128 Q100 146 116 128" stroke="#2b2340" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <path class="m m-open" d="M80 126 Q100 162 120 126 Z" fill="#2b2340"/>
+              <path class="m m-sad" d="M84 142 Q100 126 116 142" stroke="#2b2340" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <ellipse class="m m-o" cx="100" cy="135" rx="7" ry="9" fill="#2b2340"/>
+              <g class="m m-yawn"><ellipse cx="100" cy="138" rx="15" ry="19" fill="#2b2340"/><ellipse cx="100" cy="149" rx="9" ry="6" fill="#ff7a8a"/></g>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <form id="f" autocomplete="off">
+    <label for="v">Blip can</label>
+    <input id="v" maxlength="30" autocapitalize="off" spellcheck="false" placeholder="jump" aria-label="Type a verb">
+    <button type="submit">Go!</button>
+  </form>
+  <div id="msg">Try a word like <b>jump</b>, then see how many more you can find.</div>
+
+  <div class="panel">
+    <div class="row">
+      <div class="count" id="count">0 words found</div>
+      <button id="resetBtn" class="small" type="button">Start again</button>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <div id="chips"><span class="empty">Words you find will collect here. Tap one to see it again.</span></div>
+  </div>
+</div>
+
+<script>
+(() => {
+const SAY = {bark:'Woof!',woof:'Woof!',meow:'Meow!',miaow:'Miaow!',purr:'Purrrr…',moo:'Mooooo!',quack:'Quack!',oink:'Oink oink!',baa:'Baa!',bleat:'Baa!',hoot:'Twit-twoo!',neigh:'Neigh!',cluck:'Cluck cluck!',crow:'Cock-a-doodle-doo!',growl:'Grrrr…',hiss:'Hissss!',buzz:'Bzzzz!',ribbit:'Ribbit!',croak:'Ribbit!',squeak:'Squeak!',talk:'Blah blah blah!',speak:'Hello there!',chat:'…and then I said…',chatter:'Natter natter!',gossip:'Psst! Guess what?',whisper:'psst…',say:'Something!',joke:'Knock knock!',beep:'Beep beep!',honk:'HONK!'};
+
+const ACTS = {
+  jump:{w:'jump hop leap bounce spring vault',d:900,s:'up',hint:'Go up in the air and come back down'},
+  spin:{w:'spin twirl whirl rotate pirouette turn twist swivel',d:1000,s:'spin',hint:'Go round and round'},
+  grow:{w:'grow expand swell enlarge inflate',d:1800,s:'grow',hint:'Get bigger'},
+  shrink:{w:'shrink deflate dwindle',d:1800,s:'shrink',hint:'Get smaller'},
+  sleep:{w:'sleep nap snooze doze rest slumber dream snore hibernate',d:3000,face:'closed',fx:'zzz',s:'snore',hint:'What you do in bed at night'},
+  cry:{w:'cry weep sob bawl blub wail whimper',d:2500,face:'sad',fx:'tears',s:'sad',hint:'What you do when you are very sad'},
+  laugh:{w:'laugh giggle chuckle cackle chortle snigger snicker guffaw',d:2000,face:'open',fx:'haha',s:'laugh',hint:'What you do at a funny joke'},
+  dance:{w:'dance boogie groove jig disco shimmy bop jive',d:2400,fx:'notes',s:'tune',hint:'Move to music'},
+  shiver:{w:'shiver shake tremble quiver shudder wobble jiggle wiggle vibrate rattle',d:1500,face:'o',s:'wobble',hint:'Move very quickly from side to side, like when you are cold'},
+  explode:{w:'explode burst pop blow detonate combust',d:2200,face:'o',fx:'boom',s:'boom',hint:'Something very loud and messy… KABOOM'},
+  fly:{w:'fly soar float hover levitate glide flutter flap',d:3200,fx:'none',s:'flutter',hint:'What birds do in the sky'},
+  fall:{w:'fall drop trip collapse topple faint flop slip',d:2400,face:'o',s:'down',hint:'Oops! Down you go'},
+  blink:{w:'blink wink',d:900,s:'blink',hint:'Something you do with your eyes'},
+  smile:{w:'smile grin beam',d:1800,s:'boop',hint:'Show you are happy with your face'},
+  sulk:{w:'frown sulk pout mope grumble scowl brood',d:2200,face:'sad',s:'sad',hint:'Show you are grumpy'},
+  melt:{w:'melt dissolve drip ooze liquefy',d:3000,face:'o',s:'melt',hint:'What ice cream does on a hot day'},
+  vanish:{w:'vanish disappear hide teleport fade',d:2600,fx:'reappear',s:'sparkle',hint:'Now you see me, now you don’t'},
+  walk:{w:'walk stroll hike march wander amble stride waddle toddle step pace trek',d:3000,s:'steps',hint:'Get somewhere on your feet, not too fast'},
+  run:{w:'run dash sprint race zoom rush hurry jog scurry scamper bolt',d:1800,s:'fast',hint:'Get somewhere on your feet, really fast'},
+  sing:{w:'sing hum whistle chant croon yodel serenade',d:2600,face:'o',fx:'notes',s:'tune',hint:'Make music with your voice'},
+  squash:{w:'squash squish flatten squeeze crush splat',d:1600,s:'squash',hint:'Get pressed down flat'},
+  stretch:{w:'stretch reach extend lengthen',d:1900,s:'grow',hint:'Make yourself long and tall'},
+  blush:{w:'blush flush',d:2200,s:'boop',hint:'Go pink when you feel shy'},
+  sneeze:{w:'sneeze achoo',d:1600,face:'o',fx:'sneeze',s:'sneeze',hint:'Aaah… aaah…'},
+  hiccup:{w:'hiccup hiccough',d:2000,face:'o',fx:'hic',s:'hic',hint:'A funny jumpy noise you can’t stop'},
+  glow:{w:'glow shine sparkle twinkle gleam glitter shimmer dazzle',d:2400,fx:'sparkle',s:'sparkle',hint:'What stars do'},
+  freeze:{w:'freeze chill',d:2800,face:'o',fx:'ice',s:'freeze',hint:'Get very, very cold'},
+  sweat:{w:'sweat perspire panic worry fret',d:2200,face:'o',fx:'sweat',s:'wobble',hint:'Get hot and bothered'},
+  wave:{w:'wave greet salute',d:1800,s:'boop',hint:'Say hello with your hand'},
+  think:{w:'think ponder wonder consider puzzle muse contemplate imagine',d:2600,face:'o',fx:'think',s:'hmm',hint:'Use your brain'},
+  love:{w:'love adore cuddle hug kiss swoon',d:2400,fx:'hearts',s:'love',hint:'Show someone you care about them'},
+  roll:{w:'roll trundle wheel',d:2400,s:'spin',hint:'What a ball does down a hill'},
+  flip:{w:'flip somersault backflip cartwheel tumble',d:1200,s:'up',hint:'Turn upside down in the air'},
+  burp:{w:'burp belch',d:1400,face:'open',fx:'burp',s:'burp',hint:'A rude noise after a big drink'},
+  eat:{w:'eat munch chew chomp nibble gobble bite snack feast dine swallow',d:2400,face:'open',fx:'food',s:'chomp',hint:'What you do at dinner time'},
+  yawn:{w:'yawn',d:2200,face:'yawn',s:'yawn',hint:'What you do when you are tired'},
+  scream:{w:'scream shout yell shriek roar bellow howl screech',d:1800,face:'yawn',fx:'shout',s:'scream',hint:'Be really, really loud'},
+  change:{w:'change transform morph mutate colour color paint',d:3000,s:'spin',hint:'Become different'},
+  tiptoe:{w:'tiptoe sneak creep prowl skulk',d:3200,face:'o',s:'sneak',hint:'Move very quietly so nobody hears'},
+  swim:{w:'swim paddle splash dive bathe wash',d:3000,fx:'water',s:'bubbles',hint:'What fish do'},
+  talk:{w:Object.keys(SAY).join(' '),d:2000,face:'open',fx:'say',s:'babble',hint:'Make a noise like an animal'},
+  nod:{w:'nod agree bow',d:1500,s:'boop',hint:'Say yes without speaking'},
+  crouch:{w:'crouch squat duck sit kneel',d:1500,s:'shrink',hint:'Get down low'},
+  cheer:{w:'cheer clap celebrate party applaud hooray',d:2200,face:'open',fx:'confetti',s:'tune',hint:'What you do when your team wins'},
+  cough:{w:'cough splutter wheeze',d:1800,face:'o',fx:'cough',s:'cough',hint:'What you do when you have a cold'},
+  look:{w:'look peek stare watch gaze search seek peer glance spy',d:2400,s:'boop',hint:'Use your eyes to find something'},
+  clone:{w:'multiply clone copy duplicate split',d:2400,fx:'clones',s:'sparkle',hint:'Make more of yourself'},
+};
+const HUH = {d:1600,face:'o',fx:'question',s:'huh'};
+
+const MAP = {};
+for (const [k,a] of Object.entries(ACTS)) { a.words = a.w.split(' '); a.words.forEach(w => { if(!MAP[w]) MAP[w]=k; }); }
+const TOTAL = Object.keys(MAP).length;
+
+const $ = id => document.getElementById(id);
+const stage=$('stage'), mover=$('mover'), svg=$('blip'), input=$('v'), msg=$('msg');
+
+/* ---------- saved progress ---------- */
+let found = new Set();
+try { found = new Set(JSON.parse(localStorage.getItem('blip-can-found')||'[]').filter(w=>MAP[w])); } catch(e){}
+const save = () => { try { localStorage.setItem('blip-can-found', JSON.stringify([...found])); } catch(e){} };
+
+/* ---------- sound ---------- */
+let ac=null, muted=false;
+function audio(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } } if(ac.state==='suspended') ac.resume(); return ac; }
+function tone(f1,f2,dur,type='square',delay=0,vol=.05){
+  if(muted) return; const a=audio(); if(!a) return;
+  const t=a.currentTime+delay, o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.setValueAtTime(f1,t); o.frequency.exponentialRampToValueAtTime(Math.max(f2,20),t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.015); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur+.05);
+}
+function noise(dur,vol=.2,delay=0,freq=1200){
+  if(muted) return; const a=audio(); if(!a) return;
+  const t=a.currentTime+delay, len=Math.floor(a.sampleRate*dur), b=a.createBuffer(1,len,a.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+  const s=a.createBufferSource(), g=a.createGain(), f=a.createBiquadFilter();
+  s.buffer=b; f.type='lowpass'; f.frequency.value=freq;
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(f).connect(g).connect(a.destination); s.start(t);
+}
+const seq=(fs,step,dur,type='triangle',vol=.05,d0=0)=>fs.forEach((f,i)=>tone(f,f,dur,type,d0+i*step,vol));
+const SND = {
+  boop:()=>{tone(520,520,.09);tone(780,780,.12,'square',.1)},
+  up:()=>tone(260,950,.3),
+  down:()=>tone(900,110,.8,'triangle',0,.07),
+  grow:()=>tone(180,700,1.1,'triangle',0,.07),
+  shrink:()=>tone(700,180,1.1,'triangle',0,.07),
+  spin:()=>{tone(300,1200,.45,'sawtooth',0,.03);tone(1200,300,.45,'sawtooth',.45,.03)},
+  snore:()=>{[0,1.4].forEach(d=>{tone(80,130,.8,'sawtooth',d,.04);tone(200,120,.5,'sine',d+.85,.03)})},
+  sad:()=>seq([440,415,392,349],.38,.36),
+  laugh:()=>[0,.17,.34,.51,.68].forEach(d=>tone(620,440,.12,'square',d,.04)),
+  tune:()=>seq([523,659,784,659,880,784,1047],.2,.18),
+  love:()=>seq([659,784,988,1319],.25,.3,'sine',.06),
+  wobble:()=>{for(let i=0;i<10;i++) tone(300+(i%2)*90,300+(i%2)*90,.07,'square',i*.08,.03)},
+  boom:()=>{noise(.9,.5,.6,900);tone(140,40,.7,'sawtooth',.6,.12)},
+  flutter:()=>{for(let i=0;i<18;i++) tone(700+Math.random()*200,500,.05,'triangle',i*.15,.03)},
+  blink:()=>{tone(1400,900,.05,'sine',0,.04);tone(1400,900,.05,'sine',.45,.04)},
+  melt:()=>tone(600,90,2.2,'sine',0,.07),
+  sparkle:()=>seq([1047,1319,1568,2093],.08,.15,'sine',.05),
+  steps:()=>{for(let i=0;i<8;i++) tone(i%2?330:262,i%2?330:262,.08,'square',i*.375,.035)},
+  fast:()=>{for(let i=0;i<9;i++) tone(i%2?440:349,i%2?440:349,.06,'square',i*.2,.035)},
+  sneak:()=>{for(let i=0;i<8;i++) tone(i%2?196:175,i%2?196:175,.12,'triangle',i*.4,.05)},
+  squash:()=>{tone(300,90,.3,'square',0,.06);tone(200,500,.3,'triangle',.9,.05)},
+  sneeze:()=>{tone(300,800,.7,'sine',0,.04);noise(.3,.35,.85,3000)},
+  hic:()=>[.3,1,1.6].forEach(d=>tone(500,1100,.08,'square',d,.05)),
+  freeze:()=>seq([2093,1760,1568,1319,1047],.12,.2,'sine',.04),
+  hmm:()=>tone(220,260,.9,'sine',0,.08),
+  burp:()=>tone(110,65,.55,'sawtooth',0,.13),
+  chomp:()=>{for(let i=0;i<9;i++) tone(180,120,.06,'square',i*.24,.05)},
+  yawn:()=>tone(330,140,1.6,'sine',0,.09),
+  scream:()=>tone(900,1300,1.2,'sawtooth',0,.04),
+  bubbles:()=>{for(let i=0;i<10;i++) tone(400+Math.random()*600,1500,.06,'sine',i*.25,.05)},
+  babble:()=>{for(let i=0;i<8;i++){const f=250+Math.random()*250;tone(f,f*1.2,.1,'square',i*.2,.035)}},
+  cough:()=>[0,.45,.9].forEach(d=>noise(.18,.3,d,700)),
+  huh:()=>{tone(320,260,.15,'square',0,.04);tone(260,200,.22,'square',.18,.04)},
+  fresh:()=>seq([660,880,1175],.08,.1,'square',.035),
+};
+
+/* ---------- effects ---------- */
+function P(x,y){ const s=stage.getBoundingClientRect(), r=svg.getBoundingClientRect(); return [r.left-s.left+x/200*r.width, r.top-s.top+y/200*r.height]; }
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function spawn(html,[x,y],o={}){
+  const el=document.createElement('div'); el.className='fx '+(o.cls||''); el.innerHTML=html;
+  const st=el.style; st.left=x+'px'; st.top=y+'px';
+  st.setProperty('--dx',(o.dx||0)+'px'); st.setProperty('--dy',(o.dy||0)+'px');
+  if(o.s0!=null) st.setProperty('--s0',o.s0); if(o.s1!=null) st.setProperty('--s1',o.s1);
+  if(o.rot!=null) st.setProperty('--rot',o.rot+'deg');
+  if(o.size) st.fontSize=o.size+'px'; if(o.color) st.color=o.color; if(o.bg) st.background=o.bg;
+  const dur=o.dur||1200, delay=o.delay||0;
+  st.animationDuration=dur+'ms'; st.animationDelay=delay+'ms'; if(o.ease) st.animationTimingFunction=o.ease;
+  stage.appendChild(el); setTimeout(()=>el.remove(),dur+delay+60); return el;
+}
+const bubble=(text,pt,o={})=>spawn(text,pt,Object.assign({cls:'pop bubble '+(o.extra||''),dur:o.dur||1800,dy:-10,size:o.size||20},o));
+const FX = {
+  zzz(){ for(let i=0;i<4;i++) spawn('Z',P(150,60),{dx:50+i*12,dy:-110,dur:1700,delay:i*550,size:22+i*7,color:'#5b5ba8',s0:.5,s1:1.3}); },
+  tears(){ for(let i=0;i<10;i++){ const l=i%2===0; spawn('',P(l?66:134,110),{cls:'drop',dx:(l?-1:1)*rnd(15,45),dy:rnd(140,180),dur:900,delay:i*220,ease:'cubic-bezier(.4,0,1,1)'}); } },
+  haha(){ ['Ha!','Ha ha!','Hee hee!','Ho!'].forEach((t,i)=>spawn(t,P(rnd(10,190),rnd(10,40)),{dy:-50,dur:1100,delay:i*400,size:24,color:'#ff7a2c'})); },
+  notes(){ for(let i=0;i<8;i++) spawn(i%2?'♪':'♫',P(100,130),{dx:rnd(-110,110),dy:rnd(-170,-120),dur:1500,delay:i*280,size:rnd(24,36),color:['#7a4cff','#ff4f8a','#2f8cff'][i%3],rot:rnd(-30,30)}); },
+  boom(){
+    const c=P(100,110);
+    for(let i=0;i<28;i++){ const a=Math.random()*Math.PI*2, d=rnd(120,260); spawn('',c,{cls:'bit',dx:Math.cos(a)*d,dy:Math.sin(a)*d,dur:1100,delay:620,s1:.4}); }
+    spawn('BOOM!',c,{cls:'big',dur:1000,delay:620,s0:.4,s1:1.6,dy:-30});
+    FX.sparkle(1500);
+  },
+  reappear(){ FX.sparkle(1900); },
+  sneeze(){ spawn('ACHOO!',P(160,70),{cls:'big',size:38,dx:70,dy:-20,dur:1000,delay:820,s0:.5,s1:1.2}); for(let i=0;i<14;i++) spawn('',P(110,135),{cls:'drop',dx:rnd(80,220),dy:rnd(-40,60),dur:700,delay:850,s1:.5}); },
+  hic(){ [300,1000,1650].forEach(d=>spawn('hic!',P(160,40),{dx:rnd(10,40),dy:-40,dur:700,delay:d,size:24,color:'#7a4cff'})); },
+  sparkle(delay=0){ for(let i=0;i<14;i++){ const a=Math.random()*Math.PI*2, d=rnd(70,130); const c=P(100,110); spawn('✦',[c[0]+Math.cos(a)*d,c[1]+Math.sin(a)*d],{dy:-20,dur:900,delay:delay+i*90,size:rnd(16,30),color:['#ffd23f','#fff','#ff9de1'][i%3],s0:.2,s1:1.3,rot:90}); } },
+  ice(){ for(let i=0;i<10;i++) spawn('❄',P(rnd(20,180),rnd(30,170)),{dy:-15,dur:1500,delay:300+i*120,size:rnd(16,26),color:'#e9f7ff',s0:.3,s1:1}); },
+  sweat(){ for(let i=0;i<8;i++){ const l=i%2===0; spawn('',P(l?40:160,62),{cls:'drop',dx:(l?-1:1)*rnd(20,50),dy:rnd(60,110),dur:800,delay:i*230,ease:'cubic-bezier(.4,0,1,1)'}); } },
+  think(){ bubble('Hmm…',P(160,10),{extra:'thought',dur:2500,size:22}); },
+  hearts(){ for(let i=0;i<9;i++) spawn('♥',P(rnd(40,160),70),{dx:rnd(-50,50),dy:rnd(-170,-120),dur:1500,delay:i*230,size:rnd(22,36),color:'#ff4f7b',s0:.4,s1:1.2}); },
+  burp(){ bubble('BURP!',P(155,105),{size:26,dur:1200,delay:350}); },
+  food(){
+    const m=P(100,135);
+    [0,800,1600].forEach(d=>{ const st=[m[0]+170,m[1]-60]; spawn('',st,{cls:'apple',dx:m[0]-st[0],dy:m[1]-st[1],s1:.25,dur:550,delay:d,ease:'ease-in'});
+      for(let i=0;i<5;i++) spawn('',m,{cls:'bit',bg:'#e0282a',dx:rnd(-40,40),dy:rnd(20,60),s0:.3,s1:.2,dur:500,delay:d+520}); });
+    spawn('Nom nom!',P(30,30),{dy:-30,dur:1200,delay:900,size:22,color:'#ff7a2c'});
+  },
+  shout(){ spawn('AAAAAH!',P(100,10),{cls:'big',size:46,dy:-40,dur:1600,s0:.5,s1:1.4}); },
+  water(){ const w=document.createElement('div'); w.className='water'; stage.appendChild(w); setTimeout(()=>w.remove(),3100);
+    for(let i=0;i<10;i++) spawn('○',P(rnd(30,170),170),{dy:-110,dx:rnd(-20,20),dur:1200,delay:400+i*200,size:rnd(12,22),color:'#e8f6ff'}); },
+  say(word){ bubble(SAY[word]||'Hello!',P(165,20),{dur:1900,size:24}); },
+  confetti(){ const W=stage.clientWidth; const cols=['#ff6b5b','#ffd23f','#3fc6a0','#4f8cff','#b06bff','#ff9de1'];
+    for(let i=0;i<46;i++) spawn('',[rnd(0,W),-20],{cls:'conf',bg:cols[i%cols.length],dx:rnd(-60,60),dy:rnd(380,460),rot:rnd(-540,540),dur:rnd(1400,2000),delay:rnd(0,500),ease:'linear'}); },
+  cough(){ [0,450,900].forEach(d=>spawn('cough!',P(165,90),{dx:rnd(20,50),dy:-30,dur:700,delay:d,size:22,color:'#8a6b5a'})); },
+  clones(){
+    const r=mover.getBoundingClientRect(), s=stage.getBoundingClientRect();
+    [-1,1].forEach(dir=>{ const c=document.createElement('div'); c.className='clone';
+      Object.assign(c.style,{left:(r.left-s.left)+'px',top:(r.top-s.top)+'px',width:r.width+'px',height:r.height+'px'});
+      c.style.setProperty('--dx',dir*Math.min(160,s.width/2-70)+'px');
+      const k=svg.cloneNode(true); k.removeAttribute('id'); k.style.width='100%'; k.style.height='100%'; c.appendChild(k);
+      stage.appendChild(c); setTimeout(()=>c.remove(),2450); });
+  },
+  question(){ bubble('?',P(160,15),{size:30,dur:1500}); },
+};
+
+/* ---------- acting ---------- */
+let timer=null;
+function act(key,word){
+  const A = key==='huh' ? HUH : ACTS[key];
+  clearTimeout(timer);
+  stage.removeAttribute('data-act'); stage.classList.remove('blinking');
+  void stage.offsetWidth;
+  stage.dataset.act=key; stage.dataset.face=A.face||'happy';
+  if(A.s && SND[A.s]) SND[A.s]();
+  if(A.fx && FX[A.fx]) FX[A.fx](word);
+  timer=setTimeout(()=>{ stage.removeAttribute('data-act'); stage.dataset.face='happy'; },A.d);
+}
+
+/* ---------- word matching ---------- */
+function stems(w){
+  return [w, w.replace(/ies$/,'y'), w.replace(/es$/,''), w.replace(/s$/,''),
+    w.replace(/(.)\1ing$/,'$1'), w.replace(/ing$/,'e'), w.replace(/ing$/,''),
+    w.replace(/ied$/,'y'), w.replace(/(.)\1ed$/,'$1'), w.replace(/ed$/,''), w.replace(/d$/,'')];
+}
+function lookup(raw){
+  let t=raw.toLowerCase().replace(/[^a-z\s-]/g,'').trim()
+    .replace(/^blip\s+/,'').replace(/^(can|could|will|should)\s+/,'').replace(/^to\s+/,'').trim();
+  if(!t) return {clean:''};
+  const tries=[t.replace(/\s+/g,''), t.split(/\s+/)[0]];
+  for(const w of tries) for(const c of stems(w)) if(c && MAP[c]) return {clean:t,word:c};
+  return {clean:t};
+}
+
+/* ---------- UI ---------- */
+function setMsg(html,cls=''){ msg.className=cls; msg.innerHTML=html; }
+function render(fresh){
+  const n=found.size;
+  $('count').textContent = `${n} of ${TOTAL} words found`;
+  $('barFill').style.width = (n/TOTAL*100)+'%';
+  const box=$('chips'); box.innerHTML='';
+  if(!n){ box.innerHTML='<span class="empty">Words you find will collect here. Tap one to see it again.</span>'; return; }
+  [...found].sort().forEach(w=>{
+    const b=document.createElement('button'); b.type='button'; b.className='chip'+(w===fresh?' fresh':''); b.textContent=w;
+    b.onclick=()=>{ act(MAP[w],w); setMsg(`Blip can <b>${w}</b>!`); };
+    box.appendChild(b);
+  });
+}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('f').addEventListener('submit',e=>{
+  e.preventDefault();
+  const {clean,word}=lookup(input.value);
+  input.value=''; input.focus();
+  if(!clean){ setMsg('Type a doing word first, like <b>hop</b> or <b>sneeze</b>.'); return; }
+  if(word){
+    const isNew=!found.has(word);
+    act(MAP[word],word);
+    if(isNew){ found.add(word); save(); SND.fresh && setTimeout(()=>!muted&&SND.fresh(),0);
+      setMsg(`✨ New word! Blip can <b>${word}</b>!`+(found.size===TOTAL?' You found every single word! 🏆':''),'new'); render(word); }
+    else setMsg(`Blip can <b>${word}</b>! (You already found that one.)`);
+  } else {
+    act('huh');
+    setMsg(`Blip doesn’t know how to <b>${esc(clean)}</b>… yet. Try another word!`,'no');
+  }
+});
+
+$('hintBtn').onclick=()=>{
+  const groups=Object.entries(ACTS);
+  const untouched=groups.filter(([k,a])=>!a.words.some(w=>found.has(w)));
+  if(untouched.length){ const [,a]=untouched[Math.floor(Math.random()*untouched.length)]; setMsg(`💡 Hint: ${a.hint}.`); }
+  else { const left=groups.map(([k,a])=>[a,a.words.filter(w=>!found.has(w))]).filter(([,l])=>l.length);
+    if(!left.length){ setMsg('You’ve found every word. Amazing! 🏆','new'); }
+    else { const [a,l]=left[Math.floor(Math.random()*left.length)]; const known=a.words.find(w=>found.has(w));
+      setMsg(`💡 Blip knows ${l.length} more word${l.length>1?'s':''} that mean${l.length>1?'':'s'} the same as <b>${known}</b>.`); } }
+  input.focus();
+};
+$('soundBtn').onclick=e=>{ muted=!muted; e.currentTarget.textContent = muted?'🔇 Sound off':'🔊 Sound on'; if(!muted) SND.boop(); };
+let resetArmed=null;
+$('resetBtn').onclick=e=>{
+  const b=e.currentTarget;
+  if(!resetArmed){ b.textContent='Sure? Tap again'; resetArmed=setTimeout(()=>{ b.textContent='Start again'; resetArmed=null; },3000); return; }
+  clearTimeout(resetArmed); resetArmed=null; b.textContent='Start again';
+  found.clear(); save(); render(); setMsg('All cleared. Let’s find them again!');
+};
+
+/* idle blinking + responsive walk range */
+setInterval(()=>{ if(stage.dataset.act) return; stage.classList.add('blinking'); setTimeout(()=>stage.classList.remove('blinking'),150); }, 3400);
+const fit=()=>stage.style.setProperty('--range',Math.max(40,Math.min(260,stage.clientWidth/2-120))+'px');
+addEventListener('resize',fit); fit();
+
+render();
+input.focus();
+})();
+</script>
+</body>
+</html>
